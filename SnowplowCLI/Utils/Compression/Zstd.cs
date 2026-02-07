@@ -15,5 +15,14 @@ namespace SnowplowCLI.Utils.Compression
                 return decompressor.Unwrap(b);
             }
         }
+
+        public static bool IsZstdFrame(ReadOnlySpan<byte> data)
+        {
+            if (data.Length < 4)
+                return false;
+
+            uint sig = BitConverter.ToUInt32(data);
+            return sig == 0xFD2FB528 || sig == 0xDFF25B82;
+        }
     }
 }

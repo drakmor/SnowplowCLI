@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace SnowplowCLI.Utils.Compression
 {
@@ -11,14 +12,28 @@ namespace SnowplowCLI.Utils.Compression
     {
         public static byte[] Decompress(byte[] i)
         {
-            MemoryStream ms = new MemoryStream(i);
-            using (DataStream stream = new DataStream(ms))
+            using (var input = new MemoryStream(i))
+            using (var zlib = new ZLibStream(input, CompressionMode.Decompress))
+            using (var output = new MemoryStream())
             {
-                stream.Position = 2;
-                using (var ds = new DeflateStream(new MemoryStream(stream.ReadBytes((int)stream.Length - 6)), CompressionMode.Decompress))
-                    ds.CopyTo(ms);
-                return ms.ToArray();
+                zlib.CopyTo(output);
+                return output.ToArray();
             }
+        }
+
+        public static bool IsZlibHeader(ReadOnlySpan<byte> data)
+        {
+            if (data.Length < 2)
+                return false;
+
+            byte cmf = data[0];
+            byte flg = data[1];
+
+            if ((cmf & 0x0F) != 8) // deflate
+                return false;
+
+            int header = (cmf << 8) | flg;
+            return header % 31 == 0;
         }
     }
 }

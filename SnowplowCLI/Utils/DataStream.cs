@@ -20,12 +20,14 @@ public unsafe class DataStream : IDisposable
     protected Stream m_stream;
     private readonly byte[] m_buffer;
     private readonly StringBuilder m_stringBuilder;
+    private readonly bool m_leaveOpen;
 
     protected DataStream()
     {
         m_stream = Stream.Null;
         m_buffer = new byte[20];
         m_stringBuilder = new StringBuilder();
+        m_leaveOpen = false;
     }
 
     public DataStream(Stream inStream)
@@ -33,6 +35,15 @@ public unsafe class DataStream : IDisposable
         m_stream = inStream;
         m_buffer = new byte[20];
         m_stringBuilder = new StringBuilder();
+        m_leaveOpen = false;
+    }
+
+    public DataStream(Stream inStream, bool leaveOpen)
+    {
+        m_stream = inStream;
+        m_buffer = new byte[20];
+        m_stringBuilder = new StringBuilder();
+        m_leaveOpen = leaveOpen;
     }
 
     public long Seek(long offset, SeekOrigin origin) => m_stream.Seek(offset, origin);
@@ -441,7 +452,10 @@ public unsafe class DataStream : IDisposable
 
     public virtual void Dispose()
     {
-        m_stream.Dispose();
+        if (!m_leaveOpen)
+        {
+            m_stream.Dispose();
+        }
     }
 
     private short Reverse(short s)
